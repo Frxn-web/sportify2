@@ -223,8 +223,17 @@
                     <span>Duración:</span>
                     <div class="number-input">
                         <button class="btn" onclick="adjustValue('duration', -5)">−</button>
-                        <div class="number-display" id="durationCount">25</div>
+                        <div class="number-display" id="durationCount">30</div>
                         <button class="btn" onclick="adjustValue('duration', 5)">+</button>
+                    </div>
+                </div>
+                
+                <div class="number-control">
+                    <span>Pausa entre canciones:</span>
+                    <div class="number-input">
+                        <button class="btn" onclick="adjustValue('pause', -1)">−</button>
+                        <div class="number-display" id="pauseCount">3</div>
+                        <button class="btn" onclick="adjustValue('pause', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -266,26 +275,41 @@
             console.log('Abriendo:', url, 'en', appChoice);
             
             if (appChoice === 'both' || appChoice === 'original') {
+                // Spotify Original - inmediato
                 setTimeout(() => {
                     try {
                         window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music;scheme=https;end;';
                     } catch (e) {
-                        window.open(url, '_blank');
+                        try {
+                            window.location.href = 'spotify:' + url.replace('https://open.spotify.com/', '');
+                        } catch (e2) {
+                            window.open(url, '_blank');
+                        }
                     }
-                }, 100);
+                }, 200);
             }
             
             if (appChoice === 'both' || appChoice === 'cloned') {
+                // Spotify2 - delay más largo para evitar conflictos
                 setTimeout(() => {
                     try {
-                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music.clone;scheme=https;end;';
+                        const clonedPackages = [
+                            'com.spotify.music.clone',
+                            'com.appcloner.com.spotify.music',
+                            'com.spotify.music_clone',
+                            'com.parallel.space.lite.spotify'
+                        ];
+                        
+                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=' + clonedPackages[0] + ';scheme=https;end;';
+                        
                         setTimeout(() => {
                             window.open(url + '?clone=true', '_blank');
-                        }, 500);
+                        }, 1000);
                     } catch (e) {
                         console.log('Error abriendo app clonado:', e);
+                        window.open(url, '_blank');
                     }
-                }, appChoice === 'both' ? 1500 : 100);
+                }, appChoice === 'both' ? 3000 : 500); // 3 segundos si es ambos, 0.5 seg si es solo clonado
             }
         }
 
@@ -301,6 +325,7 @@
             const appChoice = document.getElementById('appChoice').value;
             const songsCount = parseInt(document.getElementById('songsCount').textContent);
             const duration = parseInt(document.getElementById('durationCount').textContent);
+            const pauseTime = parseInt(document.getElementById('pauseCount').textContent);
 
             const artistLinks = getSpotifyLinks(artistsText);
             const albumLinks = getSpotifyLinks(albumsText);
@@ -346,6 +371,12 @@
 
                     simulateSpotifyOpen(link, appChoice);
                     await sleep(duration * 1000);
+                    
+                    // Pausa adicional entre canciones (excepto en la última)
+                    if (i < linksToProcess.length - 1) {
+                        statusText.textContent = `⏸️ Pausa entre canciones (${pauseTime}s)`;
+                        await sleep(pauseTime * 1000);
+                    }
                 }
 
                 if (automationRunning) {
