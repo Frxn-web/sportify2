@@ -207,23 +207,30 @@
                     <option value="play">▶️ Play</option>
                     <option value="random">🔀 Random</option>
                 </select>
+                
+                <div class="section-title">🔄 Modo de funcionamiento</div>
+                <select id="loopMode">
+                    <option value="once">▶️ Una vez y parar</option>
+                    <option value="loop">🔁 Bucle continuo</option>
+                    <option value="infinite">♾️ Infinito (fondo)</option>
+                </select>
 
                 <div class="section-title">🎵 Set songs to play</div>
                 <div class="number-control">
-                    <span>Cantidad:</span>
+                    <span>Reproducciones por app:</span>
                     <div class="number-input">
-                        <button class="btn" onclick="adjustValue('songs', -1)">−</button>
-                        <div class="number-display" id="songsCount">3</div>
-                        <button class="btn" onclick="adjustValue('songs', 1)">+</button>
+                        <button class="btn" onclick="adjustValue('songs', -50)">−</button>
+                        <div class="number-display" id="songsCount">400</div>
+                        <button class="btn" onclick="adjustValue('songs', 50)">+</button>
                     </div>
                 </div>
 
                 <div class="section-title">⏱️ Set Play Duration (seconds)</div>
                 <div class="number-control">
-                    <span>Duración:</span>
+                    <span>Duración por canción:</span>
                     <div class="number-input">
                         <button class="btn" onclick="adjustValue('duration', -5)">−</button>
-                        <div class="number-display" id="durationCount">30</div>
+                        <div class="number-display" id="durationCount">35</div>
                         <button class="btn" onclick="adjustValue('duration', 5)">+</button>
                     </div>
                 </div>
@@ -231,9 +238,28 @@
                 <div class="number-control">
                     <span>Pausa entre canciones:</span>
                     <div class="number-input">
-                        <button class="btn" onclick="adjustValue('pause', -1)">−</button>
-                        <div class="number-display" id="pauseCount">3</div>
-                        <button class="btn" onclick="adjustValue('pause', 1)">+</button>
+                        <button class="btn" onclick="adjustValue('pause', -5)">−</button>
+                        <div class="number-display" id="pauseCount">25</div>
+                        <button class="btn" onclick="adjustValue('pause', 5)">+</button>
+                    </div>
+                </div>
+
+                <div class="section-title">🕐 Horarios de funcionamiento</div>
+                <div class="number-control">
+                    <span>Hora inicio:</span>
+                    <div class="number-input">
+                        <button class="btn" onclick="adjustValue('startHour', -1)">−</button>
+                        <div class="number-display" id="startHourCount">7</div>
+                        <button class="btn" onclick="adjustValue('startHour', 1)">+</button>
+                    </div>
+                </div>
+                
+                <div class="number-control">
+                    <span>Hora fin:</span>
+                    <div class="number-input">
+                        <button class="btn" onclick="adjustValue('endHour', -1)">−</button>
+                        <div class="number-display" id="endHourCount">23</div>
+                        <button class="btn" onclick="adjustValue('endHour', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -254,6 +280,124 @@
 
     <script>
         let automationRunning = false;
+        let cycleCount = 0;
+        let wakeLock = null;
+
+        // Función para mantener la pantalla activa
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake lock activado');
+                }
+            } catch (err) {
+                console.log('Wake lock no soportado:', err);
+            }
+        }
+
+        // Liberar wake lock
+        function releaseWakeLock() {
+            if (wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+                console.log('Wake lock liberado');
+            }
+        }
+
+        // Verificar si está en horario permitido
+        function isWithinWorkingHours() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const startHour = parseInt(document.getElementById('startHourCount').textContent);
+            const endHour = parseInt(document.getElementById('endHourCount').textContent);
+            
+            return currentHour >= startHour && currentHour < endHour;
+        }
+
+        // Calcular tiempo hasta próximo horario permitido
+        function timeUntilWorkingHours() {
+            const now = new Date();
+            const startHour = parseInt(document.getElementById('startHourCount').textContent);
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(startHour, 0, 0, 0);
+            
+            const nextStart = new Date(now);
+            nextStart.setHours(startHour, 0, 0, 0);
+            
+            if (now.getHours() >= startHour) {
+                return tomorrow.getTime() - now.getTime();
+            } else {
+                return nextStart.getTime() - now.getTime();
+            }
+        }
+
+        // Agregar variación aleatoria para parecer más humano
+        function addRandomVariation(baseValue, variationPercent = 20) {
+            const variation = baseValue * (variationPercent / 100);
+            const randomFactor = (Math.random() - 0.5) * 2; // -1 a 1
+            return Math.max(baseValue + (variation * randomFactor), baseValue * 0.5);
+        }
+
+        // Verificar que la URL es válida de Spotify
+        function validateSpotifyUrl(url) {
+            const spotifyRegex = /^https:\/\/open\.spotify\.com\/(track|album|artist|playlist)\/([a-zA-Z0-9]+)/;
+            return spotifyRegex.test(url);
+        }
+
+        // Extraer información del tipo de contenido
+        function getContentType(url) {
+            if (url.includes('/artist/')) return 'artist';
+            if (url.includes('/album/')) return 'album';
+            if (url.includes('/playlist/')) return 'playlist';
+            if (url.includes('/track/')) return 'track';
+            return 'unknown';
+        }
+
+        // Generar patrones de escucha más humanos
+        function generateHumanPattern(totalSongs, duration) {
+            const patterns = [];
+            const now = new Date();
+            const startHour = parseInt(document.getElementById('startHourCount').textContent);
+            const endHour = parseInt(document.getElementById('endHourCount').textContent);
+            
+            // Distribución no uniforme: más actividad en ciertos momentos
+            const peakHours = [9, 12, 15, 18, 21]; // Horas pico de escucha
+            const hourlyDistribution = {};
+            
+            for (let h = startHour; h < endHour; h++) {
+                if (peakHours.includes(h)) {
+                    hourlyDistribution[h] = 1.5; // 50% más actividad
+                } else if (h >= 22 || h <= 6) {
+                    hourlyDistribution[h] = 0.3; // 70% menos actividad noche/madrugada
+                } else {
+                    hourlyDistribution[h] = 1.0; // Actividad normal
+                }
+            }
+            
+            return hourlyDistribution;
+        }
+
+        // Validar y filtrar enlaces
+        function validateAndFilterLinks(links) {
+            const validLinks = [];
+            const contentTypes = { artist: 0, album: 0, playlist: 0, track: 0 };
+            
+            links.forEach(link => {
+                if (validateSpotifyUrl(link)) {
+                    const type = getContentType(link);
+                    contentTypes[type]++;
+                    validLinks.push({
+                        url: link,
+                        type: type,
+                        id: link.split('/').pop().split('?')[0]
+                    });
+                }
+            });
+            
+            console.log('Contenido detectado:', contentTypes);
+            return validLinks;
+        }
 
         function adjustValue(type, change) {
             const element = document.getElementById(type + 'Count');
@@ -261,7 +405,13 @@
             let newValue = currentValue + change;
             
             if (newValue < 1) newValue = 1;
-            if (type.includes('duration') && newValue < 5) newValue = 5;
+            if (type.includes('duration') && newValue < 15) newValue = 15;
+            if (type.includes('pause') && newValue < 5) newValue = 5;
+            if (type === 'startHour' && newValue < 0) newValue = 0;
+            if (type === 'startHour' && newValue > 23) newValue = 23;
+            if (type === 'endHour' && newValue < 1) newValue = 1;
+            if (type === 'endHour' && newValue > 23) newValue = 23;
+            if (type === 'songs' && newValue > 500) newValue = 500;
             
             element.textContent = newValue;
         }
@@ -274,43 +424,88 @@
         function simulateSpotifyOpen(url, appChoice = 'both') {
             console.log('Abriendo:', url, 'en', appChoice);
             
-            if (appChoice === 'both' || appChoice === 'original') {
-                // Spotify Original - inmediato
-                setTimeout(() => {
-                    try {
-                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music;scheme=https;end;';
-                    } catch (e) {
+            return new Promise((resolve) => {
+                if (appChoice === 'both' || appChoice === 'original') {
+                    // Spotify Original - abrir primero
+                    setTimeout(() => {
                         try {
-                            window.location.href = 'spotify:' + url.replace('https://open.spotify.com/', '');
-                        } catch (e2) {
-                            window.open(url, '_blank');
+                            // Método prioritario para Spotify original
+                            window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music;scheme=https;S.browser_fallback_url=' + encodeURIComponent(url) + ';end;';
+                        } catch (e) {
+                            try {
+                                // Fallback con esquema Spotify
+                                window.location.href = 'spotify:' + url.replace('https://open.spotify.com/', '');
+                            } catch (e2) {
+                                // Última opción: navegador
+                                window.open(url, '_blank');
+                            }
                         }
-                    }
-                }, 200);
-            }
-            
-            if (appChoice === 'both' || appChoice === 'cloned') {
-                // Spotify2 - delay más largo para evitar conflictos
-                setTimeout(() => {
-                    try {
-                        const clonedPackages = [
-                            'com.spotify.music.clone',
-                            'com.appcloner.com.spotify.music',
-                            'com.spotify.music_clone',
-                            'com.parallel.space.lite.spotify'
-                        ];
                         
-                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=' + clonedPackages[0] + ';scheme=https;end;';
+                        // Si solo es original, resolver inmediatamente
+                        if (appChoice === 'original') {
+                            setTimeout(resolve, 2000); // 2 segundos para que cargue
+                        }
+                    }, 500); // Delay inicial de 0.5 segundos
+                }
+                
+                if (appChoice === 'both' || appChoice === 'cloned') {
+                    // Spotify2 - abrir después con delay suficiente
+                    const delay = appChoice === 'both' ? 4000 : 500; // 4 segundos si es ambos
+                    
+                    setTimeout(() => {
+                        try {
+                            // Intentar múltiples paquetes de apps clonadas
+                            const clonedPackages = [
+                                'com.spotify.music.clone',
+                                'com.appcloner.com.spotify.music',
+                                'com.spotify.music_clone',
+                                'com.parallel.space.lite.spotify',
+                                'com.lbe.parallel.intl.spotify'
+                            ];
+                            
+                            // Intentar con cada paquete
+                            let attempted = false;
+                            clonedPackages.forEach((pkg, index) => {
+                                if (!attempted) {
+                                    setTimeout(() => {
+                                        try {
+                                            window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=' + pkg + ';scheme=https;S.browser_fallback_url=' + encodeURIComponent(url + '?clone=true') + ';end;';
+                                            attempted = true;
+                                        } catch (e) {
+                                            console.log('Intento', index + 1, 'falló:', e);
+                                        }
+                                    }, index * 300); // 300ms entre intentos
+                                }
+                            });
+                            
+                            // Fallback final después de todos los intentos
+                            setTimeout(() => {
+                                if (!attempted) {
+                                    window.open(url + '?clone=true&v=' + Date.now(), '_blank');
+                                }
+                            }, 2000);
+                            
+                        } catch (e) {
+                            console.log('Error general abriendo app clonado:', e);
+                            window.open(url + '?clone=true&timestamp=' + Date.now(), '_blank');
+                        }
                         
-                        setTimeout(() => {
-                            window.open(url + '?clone=true', '_blank');
-                        }, 1000);
-                    } catch (e) {
-                        console.log('Error abriendo app clonado:', e);
-                        window.open(url, '_blank');
-                    }
-                }, appChoice === 'both' ? 3000 : 500); // 3 segundos si es ambos, 0.5 seg si es solo clonado
-            }
+                        // Resolver cuando termine el proceso de clonado
+                        setTimeout(resolve, 3000); // 3 segundos adicionales para que cargue
+                    }, delay);
+                }
+                
+                // Si solo es original y ya se procesó arriba
+                if (appChoice === 'original') {
+                    // Ya está manejado arriba
+                } else if (appChoice === 'both') {
+                    // Resolver después de ambos procesos (4s + 3s = 7s total)
+                    setTimeout(resolve, 8000);
+                } else {
+                    // Solo clonado
+                    setTimeout(resolve, 4000);
+                }
+            });
         }
 
         async function startAutomation() {
@@ -323,9 +518,12 @@
             const albumsText = document.getElementById('albumsData').value;
             const typePress = document.getElementById('typePress').value;
             const appChoice = document.getElementById('appChoice').value;
+            const loopMode = document.getElementById('loopMode').value;
             const songsCount = parseInt(document.getElementById('songsCount').textContent);
             const duration = parseInt(document.getElementById('durationCount').textContent);
             const pauseTime = parseInt(document.getElementById('pauseCount').textContent);
+            const startHour = parseInt(document.getElementById('startHourCount').textContent);
+            const endHour = parseInt(document.getElementById('endHourCount').textContent);
 
             const artistLinks = getSpotifyLinks(artistsText);
             const albumLinks = getSpotifyLinks(albumsText);
@@ -336,7 +534,32 @@
                 return;
             }
 
+            // Validar y filtrar enlaces
+            const validatedLinks = validateAndFilterLinks(allLinks);
+            if (validatedLinks.length === 0) {
+                alert('⚠️ No se encontraron enlaces válidos de Spotify');
+                return;
+            }
+
+            console.log(`✅ ${validatedLinks.length} enlaces válidos encontrados`);
+
+            // Verificar horario antes de comenzar
+            if (!isWithinWorkingHours()) {
+                const waitTime = timeUntilWorkingHours();
+                const hours = Math.floor(waitTime / (1000 * 60 * 60));
+                const minutes = Math.floor((waitTime % (1000 * 60 * 60)) / (1000 * 60));
+                alert(`⏰ Fuera del horario de trabajo (${startHour}:00 - ${endHour}:00). Próximo inicio en ${hours}h ${minutes}m`);
+                return;
+            }
+
             automationRunning = true;
+            cycleCount = 0;
+            
+            // Activar wake lock para modo infinito
+            if (loopMode === 'infinite') {
+                await requestWakeLock();
+            }
+
             const startButton = document.getElementById('startButton');
             const statusDiv = document.getElementById('statusDiv');
             const statusText = document.getElementById('statusText');
@@ -347,56 +570,126 @@
             startButton.style.background = '#ff4444';
             statusDiv.classList.add('active');
 
-            try {
-                const linksToProcess = typePress === 'random' 
-                    ? shuffleArray([...allLinks]).slice(0, songsCount)
-                    : allLinks.slice(0, songsCount);
+            // Función de ciclo principal
+            async function runCycle() {
+                cycleCount++;
+                
+                try {
+                    // Usar enlaces validados
+                    const linksToProcess = typePress === 'random' 
+                        ? shuffleArray([...validatedLinks]).slice(0, songsCount)
+                        : validatedLinks.slice(0, songsCount);
 
-                for (let i = 0; i < linksToProcess.length && automationRunning; i++) {
-                    const link = linksToProcess[i];
-                    const progress = ((i + 1) / linksToProcess.length) * 100;
+                    statusText.textContent = `🔄 Ciclo ${cycleCount} - Validando contenido...`;
+                    await sleep(2000); // Pausa inicial para preparar
                     
-                    let statusMessage = '🎵 Reproduciendo ' + (i + 1) + ' de ' + linksToProcess.length;
-                    if (appChoice === 'both') {
-                        statusMessage += ' (Ambas Apps)';
-                    } else if (appChoice === 'original') {
-                        statusMessage += ' (Original)';
-                    } else {
-                        statusMessage += ' (Spotify2)';
+                    for (let i = 0; i < linksToProcess.length && automationRunning; i++) {
+                        // Verificar horario durante la ejecución
+                        if (!isWithinWorkingHours()) {
+                            statusText.textContent = `⏰ Fuera de horario - Pausando hasta ${startHour}:00`;
+                            const waitTime = timeUntilWorkingHours();
+                            await sleep(Math.min(waitTime, 60000)); // Máximo 1 minuto de espera por iteración
+                            continue;
+                        }
+
+                        const linkObj = linksToProcess[i];
+                        const link = linkObj.url;
+                        const contentType = linkObj.type;
+                        const progress = ((i + 1) / linksToProcess.length) * 100;
+                        
+                        let statusMessage = `🔄 Ciclo ${cycleCount} - 🎵 ${i + 1}/${linksToProcess.length}`;
+                        statusMessage += ` (${contentType})`;
+                        
+                        if (appChoice === 'both') {
+                            statusMessage += ' [800 vistas/día]';
+                        } else {
+                            statusMessage += ' [400 vistas/día]';
+                        }
+                        
+                        statusText.textContent = statusMessage;
+                        currentTrack.textContent = `🎶 ${contentType}: ${linkObj.id}`;
+                        progressFill.style.width = progress + '%';
+
+                        console.log(`Reproduciendo ${contentType}: ${link}`);
+                        
+                        // Usar la función async de apertura con espera
+                        await simulateSpotifyOpen(link, appChoice);
+                        
+                        // Duración con variación aleatoria más inteligente
+                        let baseDuration = duration;
+                        
+                        // Ajustar duración según tipo de contenido
+                        if (contentType === 'track') {
+                            baseDuration = Math.max(25, duration - 5); // Tracks más cortos
+                        } else if (contentType === 'artist' || contentType === 'playlist') {
+                            baseDuration = Math.max(30, duration + 5); // Artistas/playlists más largos
+                        }
+                        
+                        const randomDuration = addRandomVariation(baseDuration, 25); // ±25% variación
+                        
+                        statusText.textContent = `🔄 Ciclo ${cycleCount} - ⏳ Reproduciendo (${Math.round(randomDuration)}s)`;
+                        await sleep(randomDuration * 1000);
+                        
+                        // Pausa adicional entre canciones con variación inteligente
+                        if (i < linksToProcess.length - 1) {
+                            let basePause = pauseTime;
+                            
+                            // Pausas más largas cada 10 canciones (simulando descansos)
+                            if ((i + 1) % 10 === 0) {
+                                basePause = pauseTime * 3; // Pausa larga cada 10 canciones
+                                statusText.textContent = `🔄 Ciclo ${cycleCount} - ☕ Descanso largo (${basePause}s)`;
+                            } else {
+                                const randomPause = addRandomVariation(basePause, 40); // ±40% variación
+                                basePause = randomPause;
+                                statusText.textContent = `🔄 Ciclo ${cycleCount} - ⏸️ Pausa (${Math.round(basePause)}s)`;
+                            }
+                            
+                            await sleep(basePause * 1000);
+                        }
                     }
-                    
-                    statusText.textContent = statusMessage;
-                    currentTrack.textContent = '🎶 ' + link.split('/').pop().split('?')[0];
-                    progressFill.style.width = progress + '%';
 
-                    simulateSpotifyOpen(link, appChoice);
-                    await sleep(duration * 1000);
-                    
-                    // Pausa adicional entre canciones (excepto en la última)
-                    if (i < linksToProcess.length - 1) {
-                        statusText.textContent = `⏸️ Pausa entre canciones (${pauseTime}s)`;
-                        await sleep(pauseTime * 1000);
+                    if (!automationRunning) return;
+
+                    // Determinar qué hacer después del ciclo
+                    if (loopMode === 'once') {
+                        statusText.textContent = '✅ Automatización completada';
+                        currentTrack.textContent = '';
+                        setTimeout(() => stopAutomation(), 3000);
+                    } else if (loopMode === 'loop') {
+                        statusText.textContent = `✅ Ciclo ${cycleCount} completado - Reiniciando en 5s...`;
+                        currentTrack.textContent = '';
+                        progressFill.style.width = '0%';
+                        await sleep(5000);
+                        if (automationRunning) runCycle();
+                    } else if (loopMode === 'infinite') {
+                        statusText.textContent = `♾️ Ciclo ${cycleCount} completado - Continúa en fondo...`;
+                        currentTrack.textContent = `🔄 Próximo ciclo en 10s`;
+                        progressFill.style.width = '0%';
+                        await sleep(10000);
+                        if (automationRunning) runCycle();
                     }
-                }
 
-                if (automationRunning) {
-                    statusText.textContent = '✅ Automatización completada';
-                    currentTrack.textContent = '';
-                }
-            } catch (error) {
-                statusText.textContent = '❌ Error en la automatización';
-                console.error('Error:', error);
-            } finally {
-                if (automationRunning) {
-                    setTimeout(() => {
-                        stopAutomation();
-                    }, 2000);
+                } catch (error) {
+                    statusText.textContent = '❌ Error en la automatización';
+                    console.error('Error:', error);
+                    if (loopMode !== 'once' && automationRunning) {
+                        statusText.textContent = '🔄 Error - Reintentando en 30s...';
+                        await sleep(30000);
+                        if (automationRunning) runCycle();
+                    }
                 }
             }
+
+            // Iniciar el primer ciclo
+            runCycle();
         }
 
         function stopAutomation() {
             automationRunning = false;
+            cycleCount = 0;
+            
+            // Liberar wake lock
+            releaseWakeLock();
             
             const startButton = document.getElementById('startButton');
             const statusDiv = document.getElementById('statusDiv');
