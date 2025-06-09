@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sportify</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1db954, #1ed760);
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .section {
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 70px;
+            background: #2a2a2a;
+            border: 2px solid #404040;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 12px;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #1db954;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        select {
+            background: #404040;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .number-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+        
+        .number-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            background: #404040;
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .btn:active {
+            background: #1db954;
+        }
+        
+        .number-display {
+            background: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            min-width: 45px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .start-button {
+            background: linear-gradient(135deg, #1db954, #1ed760);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .start-button:active {
+            background: #ff4444;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .status.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #404040;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #1db954;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .note {
+            color: #ff4444;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">🎵 Sportify</div>
+        
+        <div class="section">
+            <div class="section-title">📄 List of Artists Data</div>
+            <textarea id="artistsData" placeholder="Pega aquí los enlaces de artistas de Spotify..."></textarea>
+        </div>
+
+        <div class="section">
+            <div class="section-title">💽 List of Album Data</div>
+            <textarea id="albumsData" placeholder="Pega aquí los enlaces de álbumes de Spotify..."></textarea>
+        </div>
+
+        <div class="note">⚠️ Note: If no data is entered, the system will run in Play Mode with random artists.</div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="section-title">📱 Spotify Apps</div>
+                <select id="appChoice">
+                    <option value="both">🔄 Ambos (Original + Spotify2)</option>
+                    <option value="original">🎵 Solo Spotify Original</option>
+                    <option value="cloned">🎶 Solo Spotify2</option>
+                </select>
+                
+                <div class="section-title">🎮 Type Press</div>
+                <select id="typePress">
+                    <option value="play">▶️ Play</option>
+                    <option value="random">🔀 Random</option>
+                </select>
+
+                <div class="section-title">🎵 Set songs to play</div>
+                <div class="number-control">
+                    <span>Cantidad:</span>
+                    <div class="number-input">
+                        <button class="btn" onclick="adjustValue('songs', -1)">−</button>
+                        <div class="number-display" id="songsCount">3</div>
+                        <button class="btn" onclick="adjustValue('songs', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="section-title">⏱️ Set Play Duration (seconds)</div>
+                <div class="number-control">
+                    <span>Duración:</span>
+                    <div class="number-input">
+                        <button class="btn" onclick="adjustValue('duration', -5)">−</button>
+                        <div class="number-display" id="durationCount">25</div>
+                        <button class="btn" onclick="adjustValue('duration', 5)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-button" id="startButton" onclick="startAutomation()">
+            🚀 Iniciar Automatización
+        </button>
+
+        <div class="status" id="statusDiv">
+            <div id="statusText">Preparando automatización...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="currentTrack"></div>
+        </div>
+    </div>
+
+    <script>
+        let automationRunning = false;
+
+        function adjustValue(type, change) {
+            const element = document.getElementById(type + 'Count');
+            let currentValue = parseInt(element.textContent);
+            let newValue = currentValue + change;
+            
+            if (newValue < 1) newValue = 1;
+            if (type.includes('duration') && newValue < 5) newValue = 5;
+            
+            element.textContent = newValue;
+        }
+
+        function getSpotifyLinks(text) {
+            const spotifyRegex = /https:\/\/open\.spotify\.com\/[^\s]+/g;
+            return text.match(spotifyRegex) || [];
+        }
+
+        function simulateSpotifyOpen(url, appChoice = 'both') {
+            console.log('Abriendo:', url, 'en', appChoice);
+            
+            if (appChoice === 'both' || appChoice === 'original') {
+                setTimeout(() => {
+                    try {
+                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music;scheme=https;end;';
+                    } catch (e) {
+                        window.open(url, '_blank');
+                    }
+                }, 100);
+            }
+            
+            if (appChoice === 'both' || appChoice === 'cloned') {
+                setTimeout(() => {
+                    try {
+                        window.location.href = 'intent://' + url.replace('https://', '') + '#Intent;package=com.spotify.music.clone;scheme=https;end;';
+                        setTimeout(() => {
+                            window.open(url + '?clone=true', '_blank');
+                        }, 500);
+                    } catch (e) {
+                        console.log('Error abriendo app clonado:', e);
+                    }
+                }, appChoice === 'both' ? 1500 : 100);
+            }
+        }
+
+        async function startAutomation() {
+            if (automationRunning) {
+                stopAutomation();
+                return;
+            }
+            
+            const artistsText = document.getElementById('artistsData').value;
+            const albumsText = document.getElementById('albumsData').value;
+            const typePress = document.getElementById('typePress').value;
+            const appChoice = document.getElementById('appChoice').value;
+            const songsCount = parseInt(document.getElementById('songsCount').textContent);
+            const duration = parseInt(document.getElementById('durationCount').textContent);
+
+            const artistLinks = getSpotifyLinks(artistsText);
+            const albumLinks = getSpotifyLinks(albumsText);
+            const allLinks = [...artistLinks, ...albumLinks];
+
+            if (allLinks.length === 0) {
+                alert('⚠️ Por favor, ingresa al menos un enlace de Spotify');
+                return;
+            }
+
+            automationRunning = true;
+            const startButton = document.getElementById('startButton');
+            const statusDiv = document.getElementById('statusDiv');
+            const statusText = document.getElementById('statusText');
+            const progressFill = document.getElementById('progressFill');
+            const currentTrack = document.getElementById('currentTrack');
+
+            startButton.textContent = '⏹️ Detener';
+            startButton.style.background = '#ff4444';
+            statusDiv.classList.add('active');
+
+            try {
+                const linksToProcess = typePress === 'random' 
+                    ? shuffleArray([...allLinks]).slice(0, songsCount)
+                    : allLinks.slice(0, songsCount);
+
+                for (let i = 0; i < linksToProcess.length && automationRunning; i++) {
+                    const link = linksToProcess[i];
+                    const progress = ((i + 1) / linksToProcess.length) * 100;
+                    
+                    let statusMessage = '🎵 Reproduciendo ' + (i + 1) + ' de ' + linksToProcess.length;
+                    if (appChoice === 'both') {
+                        statusMessage += ' (Ambas Apps)';
+                    } else if (appChoice === 'original') {
+                        statusMessage += ' (Original)';
+                    } else {
+                        statusMessage += ' (Spotify2)';
+                    }
+                    
+                    statusText.textContent = statusMessage;
+                    currentTrack.textContent = '🎶 ' + link.split('/').pop().split('?')[0];
+                    progressFill.style.width = progress + '%';
+
+                    simulateSpotifyOpen(link, appChoice);
+                    await sleep(duration * 1000);
+                }
+
+                if (automationRunning) {
+                    statusText.textContent = '✅ Automatización completada';
+                    currentTrack.textContent = '';
+                }
+            } catch (error) {
+                statusText.textContent = '❌ Error en la automatización';
+                console.error('Error:', error);
+            } finally {
+                if (automationRunning) {
+                    setTimeout(() => {
+                        stopAutomation();
+                    }, 2000);
+                }
+            }
+        }
+
+        function stopAutomation() {
+            automationRunning = false;
+            
+            const startButton = document.getElementById('startButton');
+            const statusDiv = document.getElementById('statusDiv');
+            
+            startButton.textContent = '🚀 Iniciar Automatización';
+            startButton.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+            statusDiv.classList.remove('active');
+            
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Llenar con datos de ejemplo
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('artistsData').value = 'https://open.spotify.com/artist/30eFAXoU2kTJPf2ccq0B8?si=4EfZEXMmTR-7qEDoqQYyeg\nhttps://open.spotify.com/artist/3hRnvEduIlPYB6EzMBbuZq?si=m2tq9qRHTBGY2_WxOcVezg';
+            
+            document.getElementById('albumsData').value = 'https://open.spotify.com/album/40Z8f0FLhVboUdBqnlfHJp?si=lj7eaoUETB2N9po0jb_Hg\nhttps://open.spotify.com/album/1wmnEWgcDdCdOuJGp-LwYxc?si=Jbv3tSvYTZCpd8Crv_wxAq';
+        });
+    </script>
+</body>
+</html>
