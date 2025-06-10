@@ -182,11 +182,14 @@
         <div class="header">🎵 Sportify</div>
         
         <div class="section">
-            <div class="section-title">🎵 Lista de Enlaces de Spotify</div>
-            <textarea id="spotifyData" placeholder="Pega aquí todos tus enlaces de Spotify (artistas, álbumes, playlists, canciones)..."></textarea>
+            <div class="section-title">🎵 Lista de Enlaces de Tracks de Spotify</div>
+            <textarea id="spotifyData" placeholder="Pega aquí SOLO enlaces de TRACKS de Spotify (se reproducen automáticamente):
+https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh
+https://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3
+https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
         </div>
 
-        <div class="note">⚠️ Puedes mezclar cualquier tipo de contenido de Spotify. Si no ingresas datos, se usarán enlaces aleatorios.</div>
+        <div class="note">⚠️ IMPORTANTE: Solo usa enlaces de TRACKS. Los tracks se reproducen automáticamente al abrirse, los álbumes/artistas NO.</div>
 
         <div class="controls">
             <div class="control-group">
@@ -265,13 +268,21 @@
         </button>
 
         <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
-            <div style="color: #1db954; font-weight: bold;">🔄 FLUJO SECUENCIAL CORRECTO:</div>
+            <div style="color: #1db954; font-weight: bold;">🎵 SOLUCIÓN: SOLO TRACKS (Reproducción Automática)</div>
             <div style="margin-top: 5px;">
-                1. 📱 Abre Spotify Original → ⏳ 6s carga → ▶️ PLAY<br>
-                2. 📱 Abre Spotify Clonado → ⏳ 6s carga → ▶️ PLAY<br>
-                3. ✅ Ambas apps reproduciendo simultáneamente<br>
-                4. 📊 Dashboard muestra progreso paso a paso<br>
-                5. ⏱️ Total: ~12-13 segundos por apertura
+                1. ✅ Solo usa enlaces de TRACKS de Spotify<br>
+                2. ▶️ Los tracks se reproducen AUTOMÁTICAMENTE al abrirse<br>
+                3. ⏱️ Tiempo reducido: 3s por app (6s total)<br>
+                4. 🎯 Sin necesidad de presionar PLAY manualmente<br>
+                5. 📊 800 reproducciones diarias garantizadas
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
+                <div style="color: #ffa500; font-weight: bold;">💡 Cómo obtener enlaces de tracks:</div>
+                <div style="font-size: 11px; margin-top: 4px;">
+                • Ve a cualquier canción en Spotify<br>
+                • Clic en "Compartir" → "Copiar enlace"<br>
+                • Debe verse: spotify.com/track/XXXXXXX
+                </div>
             </div>
         </div>
 
@@ -365,16 +376,14 @@
         }
 
         function validateSpotifyUrl(url) {
-            const spotifyRegex = /^https:\/\/open\.spotify\.com\/(track|album|artist|playlist)\/([a-zA-Z0-9]+)/;
-            return spotifyRegex.test(url);
+            // Solo aceptar enlaces de tracks
+            const trackRegex = /^https:\/\/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/;
+            return trackRegex.test(url);
         }
 
         function getContentType(url) {
-            if (url.includes('/artist/')) return 'artist';
-            if (url.includes('/album/')) return 'album';
-            if (url.includes('/playlist/')) return 'playlist';
             if (url.includes('/track/')) return 'track';
-            return 'unknown';
+            return 'invalid'; // Solo tracks son válidos
         }
 
         function validateAndFilterLinks(links) {
@@ -708,19 +717,13 @@
                         document.getElementById('playStatus').textContent = 'Ambas apps reproduciendo ▶️';
                         statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ Flujo completado, reproduciendo...';
                         console.log('✅ Flujo secuencial completado, ambas apps reproduciendo');
-                        
-                        // Duración con variación aleatoria más inteligente
+                        // Duración ajustada para tracks (se reproducen completamente)
                         let baseDuration = duration;
-                        if (contentType === 'track') {
-                            baseDuration = Math.max(25, duration - 5);
-                        } else if (contentType === 'artist' || contentType === 'playlist') {
-                            baseDuration = Math.max(30, duration + 5);
-                        }
-                        
+                        // Los tracks se reproducen automáticamente, usar duración base
                         const randomDuration = addRandomVariation(baseDuration, 25);
                         
-                        statusText.textContent = 'Ciclo ' + cycleCount + ' - 🎵 Reproduciendo (' + Math.round(randomDuration) + 's)';
-                        console.log('⏱️ Esperando ' + Math.round(randomDuration) + ' segundos de reproducción');
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - 🎵 Track reproduciéndose (' + Math.round(randomDuration) + 's)';
+                        console.log('⏱️ Esperando ' + Math.round(randomDuration) + ' segundos de reproducción del track');
                         await sleep(randomDuration * 1000);
                         
                         if (i < linksToProcess.length - 1) {
@@ -792,10 +795,10 @@
             // Cargar datos guardados sin mostrar errores
             setTimeout(loadSavedData, 100);
             
-            // Si no hay datos guardados, usar ejemplos
+            // Si no hay datos guardados, usar ejemplos DE TRACKS
             setTimeout(function() {
                 if (!document.getElementById('spotifyData').value) {
-                    document.getElementById('spotifyData').value = 'https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X\nhttps://open.spotify.com/album/2up3OPMp9Tb4dAKM2erWXQ\nhttps://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02\nhttps://open.spotify.com/album/4yP0hdKOZPNshxUOjY0cZj';
+                    document.getElementById('spotifyData').value = 'https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh\nhttps://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3\nhttps://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO\nhttps://open.spotify.com/track/1BxfuPKGuaTgP7aM0Bbdwr\nhttps://open.spotify.com/track/5ChkMS8OtdzJeqyybCc9R5\nhttps://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp\nhttps://open.spotify.com/track/2plbrEY59IikOBgBGLjaoe\nhttps://open.spotify.com/track/4VqPOruhp5EdPBeR92t6lQ';
                 }
             }, 200);
             
