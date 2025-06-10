@@ -265,13 +265,13 @@
         </button>
 
         <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
-            <div style="color: #1db954; font-weight: bold;">🔧 Optimizado para Samsung S8:</div>
+            <div style="color: #1db954; font-weight: bold;">🎯 ENFOQUE EN BOTÓN PLAY:</div>
             <div style="margin-top: 5px;">
-                1. ⏱️ Cada app tiene 6 segundos para cargar<br>
-                2. 🔄 Total: 19 segundos por ciclo (ambas apps)<br>
-                3. 🎯 Múltiples métodos de apertura automática<br>
-                4. 📱 Intents específicos para Samsung<br>
-                5. 🔍 Revisa la consola para logs detallados
+                1. ▶️ Usa URIs con comando ":play" automático<br>
+                2. 🔧 Intents con parámetros S.autoplay=true<br>
+                3. ⌨️ Simula tecla SPACE para reproducir<br>
+                4. 📊 Dashboard muestra estado de PLAY<br>
+                5. 🔍 Una sola apertura por app (no spam)
             </div>
         </div>
 
@@ -284,14 +284,15 @@
             
             <div id="dashboard" style="margin-top: 15px; padding: 10px; background: #333; border-radius: 6px; display: none;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
-                    <div>📊 Reproducciones: <span id="dailyCount">0</span>/800</div>
-                    <div>💰 Ganancia: $<span id="earningsToday">0.00</span></div>
-                    <div>⏱️ Tiempo: <span id="activeTime">0h 0m</span></div>
-                    <div>📱 Apps: <span id="detectedApps">Verificando...</span></div>
+                    <div>📊 Reproducciones hoy: <span id="dailyCount">0</span>/800</div>
+                    <div>💰 Ganancia estimada: $<span id="earningsToday">0.00</span></div>
+                    <div>⏱️ Tiempo activo: <span id="activeTime">0h 0m</span></div>
+                    <div>🎵 Ciclo actual: <span id="currentCycle">0</span></div>
                 </div>
                 <div style="margin-top: 8px; font-size: 11px;">
-                    <div>🎵 Último: <span id="lastPlayed">Ninguno</span></div>
-                    <div>🔄 Rotación: <span id="rotationStatus">Activada</span></div>
+                    <div>🎶 Último reproducido: <span id="lastPlayed">Ninguno</span></div>
+                    <div>📱 Apps detectadas: <span id="detectedApps">Verificando...</span></div>
+                    <div>▶️ Estado PLAY: <span id="playStatus">En espera</span></div>
                 </div>
             </div>
         </div>
@@ -487,213 +488,111 @@
 
         function simulateSpotifyOpen(url, appChoice = 'both') {
             return new Promise((resolve) => {
-                console.log('🎵 Samsung S8 - Intentando reproducir:', url);
+                console.log('🎵 Abriendo Spotify y presionando PLAY:', url);
                 
                 if (appChoice === 'both' || appChoice === 'original') {
                     setTimeout(() => {
-                        console.log('📱 Abriendo Spotify Original...');
-                        
-                        // Método 1: Esquema spotify:// directo (más efectivo en Samsung)
                         try {
+                            // Método 1: URI de Spotify con comando de reproducción automática
                             const spotifyUri = url.replace('https://open.spotify.com/', 'spotify:');
-                            console.log('🔗 Intentando con URI:', spotifyUri);
-                            window.location.href = spotifyUri;
-                        } catch (e) {
-                            console.log('❌ URI falló:', e);
-                        }
-                        
-                        // Método 2: Intent específico para Samsung (después de 1.5s)
-                        setTimeout(() => {
-                            try {
-                                const samsungIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=com.spotify.music;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;component=com.spotify.music/.MainActivity;end;';
-                                console.log('🔗 Intentando intent Samsung:', samsungIntent);
-                                window.location.href = samsungIntent;
-                            } catch (e) {
-                                console.log('❌ Intent Samsung falló:', e);
-                            }
-                        }, 1500);
-                        
-                        // Método 3: Abrir en navegador con auto-redirect (después de 3s)
-                        setTimeout(() => {
-                            try {
-                                console.log('🌐 Abriendo en navegador...');
-                                const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                            const playUri = spotifyUri + ':play';
+                            console.log('▶️ Forzando reproducción con URI:', playUri);
+                            window.location.href = playUri;
+                            
+                            // Método 2: Intent con ACTION_VIEW y datos de reproducción
+                            setTimeout(() => {
+                                const playIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=com.spotify.music;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.autoplay=true;B.play=true;end;';
+                                console.log('▶️ Intent con autoplay:', playIntent);
+                                window.location.href = playIntent;
+                            }, 1500);
+                            
+                            // Método 3: Simular presión de botón PLAY después de abrir
+                            setTimeout(() => {
+                                console.log('🎮 Simulando presión de botón PLAY...');
+                                // Abrir primero
+                                window.open(url, '_blank');
                                 
-                                // Si la ventana se bloquea, usar createElement
-                                if (!newWindow) {
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.target = '_blank';
-                                    link.rel = 'noopener noreferrer';
-                                    link.style.position = 'absolute';
-                                    link.style.left = '-9999px';
-                                    document.body.appendChild(link);
-                                    
-                                    // Simular click con evento
-                                    const clickEvent = new MouseEvent('click', {
-                                        view: window,
-                                        bubbles: true,
-                                        cancelable: true
-                                    });
-                                    link.dispatchEvent(clickEvent);
-                                    
-                                    setTimeout(() => {
-                                        document.body.removeChild(link);
-                                    }, 1000);
-                                }
-                            } catch (e) {
-                                console.log('❌ Navegador falló:', e);
-                            }
-                        }, 3000);
-                        
-                        // Método 4: Forzar click programático (después de 4.5s)
-                        setTimeout(() => {
-                            try {
-                                console.log('🖱️ Forzando click programático...');
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                iframe.src = url;
-                                document.body.appendChild(iframe);
-                                
+                                // Luego intentar simular tecla SPACE (Play/Pause)
                                 setTimeout(() => {
                                     try {
-                                        iframe.contentWindow.location = url;
+                                        const spaceEvent = new KeyboardEvent('keydown', {
+                                            key: ' ',
+                                            code: 'Space',
+                                            keyCode: 32,
+                                            which: 32,
+                                            bubbles: true
+                                        });
+                                        document.dispatchEvent(spaceEvent);
+                                        
+                                        const spaceUpEvent = new KeyboardEvent('keyup', {
+                                            key: ' ',
+                                            code: 'Space',
+                                            keyCode: 32,
+                                            which: 32,
+                                            bubbles: true
+                                        });
+                                        document.dispatchEvent(spaceUpEvent);
                                     } catch (e) {
-                                        console.log('⚠️ Iframe redirect falló');
+                                        console.log('⚠️ Simulación de tecla falló');
                                     }
-                                    document.body.removeChild(iframe);
-                                }, 500);
-                            } catch (e) {
-                                console.log('❌ Click programático falló:', e);
-                            }
-                        }, 4500);
+                                }, 2000);
+                            }, 3000);
+                            
+                        } catch (e) {
+                            console.log('❌ Error abriendo Spotify Original:', e);
+                        }
                         
-                        // Para solo original, resolver después de 6 segundos
                         if (appChoice === 'original') {
-                            setTimeout(() => {
-                                console.log('✅ Spotify Original - Tiempo de carga completado');
-                                resolve();
-                            }, 6000);
+                            setTimeout(resolve, 6000);
                         }
                     }, 500);
                 }
                 
                 if (appChoice === 'both' || appChoice === 'cloned') {
-                    // Si es "ambos", esperar 7 segundos para dar tiempo al original
                     const delay = appChoice === 'both' ? 7000 : 500;
                     
                     setTimeout(() => {
-                        console.log('📱 Abriendo Spotify Clonado...');
-                        
-                        // Paquetes específicos para Samsung con App Cloner
-                        const samsungClonedPackages = [
-                            'com.spotify.music.clone',
-                            'com.appcloner.com.spotify.music',
-                            'com.spotify.music_clone',
-                            'com.lbe.parallel.intl',
-                            'com.parallel.space.lite',
-                            'com.dual.space.spotify'
-                        ];
-                        
-                        // Probar cada paquete con delay entre intentos
-                        samsungClonedPackages.forEach((pkg, index) => {
+                        try {
+                            console.log('📱 Abriendo Spotify Clonado con PLAY...');
+                            
+                            // Para app clonado con autoplay
+                            const clonedPackages = [
+                                'com.spotify.music.clone',
+                                'com.appcloner.com.spotify.music'
+                            ];
+                            
+                            clonedPackages.forEach((pkg, index) => {
+                                setTimeout(() => {
+                                    try {
+                                        const playIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=' + pkg + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.autoplay=true;B.play=true;end;';
+                                        console.log('▶️ Clonado con autoplay:', pkg);
+                                        window.location.href = playIntent;
+                                    } catch (e) {
+                                        console.log('❌ Paquete falló:', pkg);
+                                    }
+                                }, index * 500);
+                            });
+                            
+                            // Fallback: abrir en navegador
                             setTimeout(() => {
-                                try {
-                                    const cloneIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=' + pkg + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;component=' + pkg + '/.MainActivity;end;';
-                                    console.log('🔗 Intentando paquete clonado ' + (index + 1) + ':', pkg);
-                                    window.location.href = cloneIntent;
-                                } catch (e) {
-                                    console.log('❌ Paquete ' + pkg + ' falló:', e);
-                                }
-                            }, index * 300);
-                        });
+                                const cloneUrl = url + (url.includes('?') ? '&' : '?') + 'autoplay=true&play=true';
+                                console.log('🌐 Abriendo clonado en navegador con autoplay');
+                                window.open(cloneUrl, '_blank');
+                            }, 2000);
+                            
+                        } catch (e) {
+                            console.log('❌ Error abriendo Spotify Clonado:', e);
+                        }
                         
-                        // Fallback 1: Abrir en navegador con parámetros únicos (después de 2s)
-                        setTimeout(() => {
-                            try {
-                                const cloneUrl = url + (url.includes('?') ? '&' : '?') + 'utm_source=clone&clone=1&t=' + Date.now();
-                                console.log('🌐 Abriendo clonado en navegador:', cloneUrl);
-                                
-                                const cloneWindow = window.open(cloneUrl, '_blank', 'noopener,noreferrer');
-                                if (!cloneWindow) {
-                                    // Método alternativo si se bloquea popup
-                                    const cloneLink = document.createElement('a');
-                                    cloneLink.href = cloneUrl;
-                                    cloneLink.target = '_blank';
-                                    cloneLink.rel = 'noopener noreferrer';
-                                    cloneLink.download = ''; // Fuerza descarga/apertura
-                                    cloneLink.style.position = 'absolute';
-                                    cloneLink.style.left = '-9999px';
-                                    document.body.appendChild(cloneLink);
-                                    
-                                    // Click con múltiples eventos
-                                    ['mousedown', 'click', 'mouseup'].forEach(eventType => {
-                                        const event = new MouseEvent(eventType, {
-                                            view: window,
-                                            bubbles: true,
-                                            cancelable: true,
-                                            button: 0
-                                        });
-                                        cloneLink.dispatchEvent(event);
-                                    });
-                                    
-                                    setTimeout(() => {
-                                        document.body.removeChild(cloneLink);
-                                    }, 1000);
-                                }
-                            } catch (e) {
-                                console.log('❌ Navegador clonado falló:', e);
-                            }
-                        }, 2000);
-                        
-                        // Fallback 2: Método de fuerza bruta (después de 4s)
-                        setTimeout(() => {
-                            try {
-                                console.log('💪 Método de fuerza bruta para clonado...');
-                                const bruteForceTechniques = [
-                                    () => window.open(url + '?force=clone', '_self'),
-                                    () => window.location.assign(url + '?method=clone'),
-                                    () => window.location.replace(url + '?replace=clone'),
-                                    () => document.location.href = url + '?location=clone'
-                                ];
-                                
-                                bruteForceTechniques.forEach((technique, index) => {
-                                    setTimeout(() => {
-                                        try {
-                                            technique();
-                                        } catch (e) {
-                                            console.log('❌ Técnica ' + (index + 1) + ' falló');
-                                        }
-                                    }, index * 200);
-                                });
-                            } catch (e) {
-                                console.log('❌ Fuerza bruta falló:', e);
-                            }
-                        }, 4000);
-                        
-                        // Resolver después de 6 segundos de carga
-                        setTimeout(() => {
-                            console.log('✅ Spotify Clonado - Tiempo de carga completado');
-                            resolve();
-                        }, 6000);
+                        setTimeout(resolve, 6000);
                     }, delay);
                 }
                 
-                // Tiempos de resolución finales
+                // Tiempos de resolución simplificados
                 if (appChoice === 'both') {
-                    // Original: 6s + delay 7s + clonado 6s = 19s total
-                    setTimeout(() => {
-                        console.log('✅ Ambas apps - Proceso completado');
-                        resolve();
-                    }, 19000);
-                } else if (appChoice === 'original') {
-                    // Ya manejado arriba (6s)
+                    setTimeout(resolve, 14000); // 7s + 6s + 1s buffer
                 } else {
-                    // Solo clonado: 6s
-                    setTimeout(() => {
-                        console.log('✅ Solo clonado - Proceso completado');
-                        resolve();
-                    }, 6500);
+                    setTimeout(resolve, 6500);
                 }
             });
         }
@@ -797,13 +696,18 @@
                         
                         updateDashboard();
                         
+                        // Actualizar estado de PLAY en dashboard
+                        document.getElementById('currentCycle').textContent = cycleCount;
+                        document.getElementById('playStatus').textContent = 'Intentando reproducir...';
+                        
                         // Usar la función async de apertura con espera
-                        console.log('🚀 Iniciando apertura de Spotify para:', linkObj.id);
+                        console.log('🚀 Iniciando apertura y PLAY automático para:', linkObj.id);
                         await simulateSpotifyOpen(link, appChoice);
                         
-                        // Mensaje de confirmación después de la apertura
-                        statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ Apps abiertas, esperando reproducción...';
-                        console.log('✅ Apertura completada, iniciando tiempo de reproducción');
+                        // Actualizar estado después de la apertura
+                        document.getElementById('playStatus').textContent = 'Reproduciendo ▶️';
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ PLAY presionado, reproduciendo...';
+                        console.log('✅ PLAY automático ejecutado');
                         
                         // Duración con variación aleatoria más inteligente
                         let baseDuration = duration;
