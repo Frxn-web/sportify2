@@ -264,6 +264,16 @@
             🚀 Iniciar Automatización
         </button>
 
+        <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
+            <div style="color: #1db954; font-weight: bold;">🔧 Instrucciones para que funcione:</div>
+            <div style="margin-top: 5px;">
+                1. Asegúrate que Spotify esté instalado<br>
+                2. La app abrirá Spotify automáticamente<br>
+                3. Si no abre, verifica los enlaces<br>
+                4. Revisa la consola para logs de debug
+            </div>
+        </div>
+
         <div class="status" id="statusDiv">
             <div id="statusText">Preparando automatización...</div>
             <div class="progress-bar">
@@ -476,73 +486,106 @@
 
         function simulateSpotifyOpen(url, appChoice = 'both') {
             return new Promise((resolve) => {
+                console.log('🎵 Intentando reproducir:', url);
+                
                 if (appChoice === 'both' || appChoice === 'original') {
                     setTimeout(() => {
                         try {
-                            const autoplayUrl = url + (url.includes('?') ? '&' : '?') + 'autoplay=true&play=true';
-                            window.location.href = 'intent://' + autoplayUrl.replace('https://', '') + '#Intent;package=com.spotify.music;action=android.intent.action.VIEW;scheme=https;end;';
+                            // Método 1: Intent directo con ACTION_VIEW
+                            const spotifyUri = url.replace('https://open.spotify.com/', 'spotify:');
+                            window.location.href = spotifyUri;
                             
+                            // Método 2: Fallback con intent completo
                             setTimeout(() => {
-                                try {
-                                    const spotifyScheme = 'spotify:' + url.replace('https://open.spotify.com/', '') + '?play=true';
-                                    window.location.href = spotifyScheme;
-                                } catch (e2) {
-                                    window.open(autoplayUrl, '_blank');
-                                }
+                                const intent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=com.spotify.music;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;';
+                                window.location.href = intent;
+                            }, 500);
+                            
+                            // Método 3: Abrir en navegador como último recurso
+                            setTimeout(() => {
+                                window.open(url, '_blank', 'noopener,noreferrer');
                             }, 1000);
                             
+                            // Método 4: Forzar con JavaScript
+                            setTimeout(() => {
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.target = '_blank';
+                                link.rel = 'noopener noreferrer';
+                                link.style.display = 'none';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }, 1500);
+                            
                         } catch (e) {
-                            window.open(url + '?autoplay=true', '_blank');
+                            console.log('Error Spotify Original:', e);
                         }
                         
                         if (appChoice === 'original') {
                             setTimeout(resolve, 3000);
                         }
-                    }, 800);
+                    }, 300);
                 }
                 
                 if (appChoice === 'both' || appChoice === 'cloned') {
-                    const delay = appChoice === 'both' ? 5000 : 800;
+                    const delay = appChoice === 'both' ? 4000 : 300;
                     
                     setTimeout(() => {
                         try {
-                            const autoplayUrl = url + (url.includes('?') ? '&' : '?') + 'autoplay=true&play=true&clone=true';
-                            
+                            // Para app clonado - múltiples intentos
                             const clonedPackages = [
                                 'com.spotify.music.clone',
                                 'com.appcloner.com.spotify.music',
-                                'com.spotify.music_clone'
+                                'com.spotify.music_clone',
+                                'com.lbe.parallel.intl'
                             ];
                             
+                            // Probar cada paquete
                             clonedPackages.forEach((pkg, index) => {
                                 setTimeout(() => {
                                     try {
-                                        const intentUrl = 'intent://' + autoplayUrl.replace('https://', '') + '#Intent;package=' + pkg + ';action=android.intent.action.VIEW;scheme=https;end;';
-                                        window.location.href = intentUrl;
+                                        const intent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=' + pkg + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;';
+                                        window.location.href = intent;
                                     } catch (e) {
-                                        console.log('Intento falló');
+                                        console.log('Intento ' + (index + 1) + ' falló para clonado');
                                     }
-                                }, index * 400);
+                                }, index * 200);
                             });
                             
+                            // Fallback: abrir en navegador con parámetros especiales
                             setTimeout(() => {
-                                window.open(autoplayUrl, '_blank');
-                            }, 2500);
+                                const cloneUrl = url + (url.includes('?') ? '&' : '?') + 'utm_source=clone&t=' + Date.now();
+                                window.open(cloneUrl, '_blank', 'noopener,noreferrer');
+                                
+                                // Segundo fallback
+                                setTimeout(() => {
+                                    const link2 = document.createElement('a');
+                                    link2.href = cloneUrl;
+                                    link2.target = '_blank';
+                                    link2.rel = 'noopener noreferrer';
+                                    link2.style.display = 'none';
+                                    document.body.appendChild(link2);
+                                    link2.click();
+                                    document.body.removeChild(link2);
+                                }, 500);
+                            }, 1000);
                             
                         } catch (e) {
-                            window.open(url + '?clone=true&autoplay=true', '_blank');
+                            console.log('Error Spotify Clonado:', e);
                         }
                         
-                        setTimeout(resolve, 4000);
+                        setTimeout(resolve, 3000);
                     }, delay);
                 }
                 
+                // Tiempos de resolución
                 if (appChoice === 'both') {
-                    setTimeout(resolve, 10000);
+                    setTimeout(resolve, 8000);
                 } else if (appChoice === 'original') {
                     // Ya manejado arriba
                 } else {
-                    setTimeout(resolve, 5000);
+                    setTimeout(resolve, 4000);
                 }
             });
         }
@@ -646,8 +689,16 @@
                         
                         updateDashboard();
                         
+                        // Log para debug
+                        console.log('🎵 Reproduciendo:', contentType, linkObj.id);
+                        
+                        // Usar la función async de apertura con espera
                         await simulateSpotifyOpen(link, appChoice);
                         
+                        // Mensaje de confirmación
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ Spotify abierto, reproduciendo...';
+                        
+                        // Duración con variación aleatoria más inteligente
                         let baseDuration = duration;
                         if (contentType === 'track') {
                             baseDuration = Math.max(25, duration - 5);
@@ -657,7 +708,7 @@
                         
                         const randomDuration = addRandomVariation(baseDuration, 25);
                         
-                        statusText.textContent = 'Ciclo ' + cycleCount + ' - Reproduciendo (' + Math.round(randomDuration) + 's)';
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - 🎵 Reproduciendo (' + Math.round(randomDuration) + 's)';
                         await sleep(randomDuration * 1000);
                         
                         if (i < linksToProcess.length - 1) {
@@ -732,7 +783,7 @@
             // Si no hay datos guardados, usar ejemplos
             setTimeout(function() {
                 if (!document.getElementById('spotifyData').value) {
-                    document.getElementById('spotifyData').value = 'https://open.spotify.com/artist/30eFAXoU2kTJPf2ccq0B8\nhttps://open.spotify.com/album/40Z8f0FLhVboUdBqnlfHJp\nhttps://open.spotify.com/artist/3hRnvEduIlPYB6EzMBbuZq\nhttps://open.spotify.com/album/1wmnEWgcDdCdOuJGp-LwYxc';
+                    document.getElementById('spotifyData').value = 'https://open.spotify.com/artist/4q3ewBCX7sLwd24euuV69X\nhttps://open.spotify.com/album/2up3OPMp9Tb4dAKM2erWXQ\nhttps://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02\nhttps://open.spotify.com/album/4yP0hdKOZPNshxUOjY0cZj';
                 }
             }, 200);
             
