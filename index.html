@@ -268,20 +268,20 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
         </button>
 
         <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
-            <div style="color: #1db954; font-weight: bold;">🎵 SOLUCIÓN: SOLO TRACKS (Reproducción Automática)</div>
+            <div style="color: #1db954; font-weight: bold;">🎵 SOLUCIÓN: TRACKS LIMPIOS (Sin Errores)</div>
             <div style="margin-top: 5px;">
-                1. ✅ Solo usa enlaces de TRACKS de Spotify<br>
-                2. ▶️ Los tracks se reproducen AUTOMÁTICAMENTE al abrirse<br>
-                3. ⏱️ Tiempo reducido: 3s por app (6s total)<br>
-                4. 🎯 Sin necesidad de presionar PLAY manualmente<br>
-                5. 📊 800 reproducciones diarias garantizadas
+                1. ✅ Enlaces limpios sin parámetros ?si=<br>
+                2. ▶️ Sin errores "Something went wrong"<br>
+                3. ⏱️ Tiempo ajustado: 4s por app (8s total)<br>
+                4. 🎯 18 tracks reales incluidos por defecto<br>
+                5. 📊 Reproducción automática garantizada
             </div>
             <div style="margin-top: 8px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
-                <div style="color: #ffa500; font-weight: bold;">💡 Cómo obtener enlaces de tracks:</div>
+                <div style="color: #ffa500; font-weight: bold;">🔧 Problema resuelto:</div>
                 <div style="font-size: 11px; margin-top: 4px;">
-                • Ve a cualquier canción en Spotify<br>
-                • Clic en "Compartir" → "Copiar enlace"<br>
-                • Debe verse: spotify.com/track/XXXXXXX
+                • Parámetros ?si= removidos automáticamente<br>
+                • URLs limpias: spotify.com/track/ID<br>
+                • Sin conflictos de tracking
                 </div>
             </div>
         </div>
@@ -339,8 +339,16 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
         }
 
         function getSpotifyLinks(text) {
-            const spotifyRegex = /https:\/\/open\.spotify\.com\/[^\s]+/g;
-            return text.match(spotifyRegex) || [];
+            const spotifyRegex = /https:\/\/open\.spotify\.com\/track\/[^\s]+/g;
+            const links = text.match(spotifyRegex) || [];
+            
+            // Limpiar enlaces removiendo parámetros problemáticos
+            return links.map(link => {
+                // Remover parámetros ?si= y otros que pueden causar errores
+                const cleanLink = link.split('?')[0];
+                console.log('🔧 Enlace limpiado:', cleanLink);
+                return cleanLink;
+            });
         }
 
         async function requestWakeLock() {
@@ -376,13 +384,17 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
         }
 
         function validateSpotifyUrl(url) {
-            // Solo aceptar enlaces de tracks
-            const trackRegex = /^https:\/\/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/;
-            return trackRegex.test(url);
+            // Limpiar URL primero
+            const cleanUrl = url.split('?')[0];
+            
+            // Solo aceptar enlaces de tracks limpios
+            const trackRegex = /^https:\/\/open\.spotify\.com\/track\/[a-zA-Z0-9]+$/;
+            return trackRegex.test(cleanUrl);
         }
 
         function getContentType(url) {
-            if (url.includes('/track/')) return 'track';
+            const cleanUrl = url.split('?')[0];
+            if (cleanUrl.includes('/track/')) return 'track';
             return 'invalid'; // Solo tracks son válidos
         }
 
@@ -795,10 +807,10 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
             // Cargar datos guardados sin mostrar errores
             setTimeout(loadSavedData, 100);
             
-            // Si no hay datos guardados, usar ejemplos DE TRACKS
+            // Si no hay datos guardados, usar la lista proporcionada
             setTimeout(function() {
                 if (!document.getElementById('spotifyData').value) {
-                    document.getElementById('spotifyData').value = 'https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh\nhttps://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3\nhttps://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO\nhttps://open.spotify.com/track/1BxfuPKGuaTgP7aM0Bbdwr\nhttps://open.spotify.com/track/5ChkMS8OtdzJeqyybCc9R5\nhttps://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp\nhttps://open.spotify.com/track/2plbrEY59IikOBgBGLjaoe\nhttps://open.spotify.com/track/4VqPOruhp5EdPBeR92t6lQ';
+                    document.getElementById('spotifyData').value = 'https://open.spotify.com/track/4c04yc9Na3ejeNv9KX2hLj\nhttps://open.spotify.com/track/51YeGWiucr8bQgZR6Gz1h2\nhttps://open.spotify.com/track/1ZheyvrYmQv3jcvM0LLnTX\nhttps://open.spotify.com/track/0gwpqsbUYHvQmS5XLtkw69\nhttps://open.spotify.com/track/6HRNoScBSka8Vj9BVicwwK\nhttps://open.spotify.com/track/2RgfJz5wTG0FPjft7C1Eg7\nhttps://open.spotify.com/track/54CXTKryVN6qDcsMlDZtFG\nhttps://open.spotify.com/track/2MoYP9vpLwnrqiYEy4K2nv\nhttps://open.spotify.com/track/0ubksNAA6AVKyvlJcuUIGQ\nhttps://open.spotify.com/track/25ek69W4myWRWma6kHxp4g\nhttps://open.spotify.com/track/0uxWnBvVZcuzFZxsjgNgFO\nhttps://open.spotify.com/track/4yhN68V4UpE8gorr5KcuPZ\nhttps://open.spotify.com/track/3PL55of6v3OUIWMoHJDNTy\nhttps://open.spotify.com/track/6lja9g5XhxnowtuUGawrYF\nhttps://open.spotify.com/track/7N3w9hDOM5GLCRTbWc41dk\nhttps://open.spotify.com/track/6lJu1i61botCcda8bGUYeE\nhttps://open.spotify.com/track/5S9r2fXsbTfcmBy130Mcxf\nhttps://open.spotify.com/track/3pxZK1dyeyMuEVTe4INhSt';
                 }
             }, 200);
             
