@@ -265,13 +265,13 @@
         </button>
 
         <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
-            <div style="color: #1db954; font-weight: bold;">🎯 ENFOQUE EN BOTÓN PLAY:</div>
+            <div style="color: #1db954; font-weight: bold;">🔄 FLUJO SECUENCIAL CORRECTO:</div>
             <div style="margin-top: 5px;">
-                1. ▶️ Usa URIs con comando ":play" automático<br>
-                2. 🔧 Intents con parámetros S.autoplay=true<br>
-                3. ⌨️ Simula tecla SPACE para reproducir<br>
-                4. 📊 Dashboard muestra estado de PLAY<br>
-                5. 🔍 Una sola apertura por app (no spam)
+                1. 📱 Abre Spotify Original → ⏳ 6s carga → ▶️ PLAY<br>
+                2. 📱 Abre Spotify Clonado → ⏳ 6s carga → ▶️ PLAY<br>
+                3. ✅ Ambas apps reproduciendo simultáneamente<br>
+                4. 📊 Dashboard muestra progreso paso a paso<br>
+                5. ⏱️ Total: ~12-13 segundos por apertura
             </div>
         </div>
 
@@ -487,113 +487,113 @@
         }
 
         function simulateSpotifyOpen(url, appChoice = 'both') {
-            return new Promise((resolve) => {
-                console.log('🎵 Abriendo Spotify y presionando PLAY:', url);
+            return new Promise(async (resolve) => {
+                console.log('🎵 Iniciando flujo secuencial para:', url);
                 
                 if (appChoice === 'both' || appChoice === 'original') {
-                    setTimeout(() => {
-                        try {
-                            // Método 1: URI de Spotify con comando de reproducción automática
-                            const spotifyUri = url.replace('https://open.spotify.com/', 'spotify:');
-                            const playUri = spotifyUri + ':play';
-                            console.log('▶️ Forzando reproducción con URI:', playUri);
-                            window.location.href = playUri;
-                            
-                            // Método 2: Intent con ACTION_VIEW y datos de reproducción
-                            setTimeout(() => {
-                                const playIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=com.spotify.music;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.autoplay=true;B.play=true;end;';
-                                console.log('▶️ Intent con autoplay:', playIntent);
-                                window.location.href = playIntent;
-                            }, 1500);
-                            
-                            // Método 3: Simular presión de botón PLAY después de abrir
-                            setTimeout(() => {
-                                console.log('🎮 Simulando presión de botón PLAY...');
-                                // Abrir primero
-                                window.open(url, '_blank');
-                                
-                                // Luego intentar simular tecla SPACE (Play/Pause)
-                                setTimeout(() => {
-                                    try {
-                                        const spaceEvent = new KeyboardEvent('keydown', {
-                                            key: ' ',
-                                            code: 'Space',
-                                            keyCode: 32,
-                                            which: 32,
-                                            bubbles: true
-                                        });
-                                        document.dispatchEvent(spaceEvent);
-                                        
-                                        const spaceUpEvent = new KeyboardEvent('keyup', {
-                                            key: ' ',
-                                            code: 'Space',
-                                            keyCode: 32,
-                                            which: 32,
-                                            bubbles: true
-                                        });
-                                        document.dispatchEvent(spaceUpEvent);
-                                    } catch (e) {
-                                        console.log('⚠️ Simulación de tecla falló');
-                                    }
-                                }, 2000);
-                            }, 3000);
-                            
-                        } catch (e) {
-                            console.log('❌ Error abriendo Spotify Original:', e);
-                        }
-                        
-                        if (appChoice === 'original') {
-                            setTimeout(resolve, 6000);
-                        }
-                    }, 500);
-                }
-                
-                if (appChoice === 'both' || appChoice === 'cloned') {
-                    const delay = appChoice === 'both' ? 7000 : 500;
+                    console.log('📱 PASO 1: Abriendo Spotify Original...');
                     
-                    setTimeout(() => {
-                        try {
-                            console.log('📱 Abriendo Spotify Clonado con PLAY...');
-                            
-                            // Para app clonado con autoplay
-                            const clonedPackages = [
-                                'com.spotify.music.clone',
-                                'com.appcloner.com.spotify.music'
-                            ];
-                            
-                            clonedPackages.forEach((pkg, index) => {
-                                setTimeout(() => {
-                                    try {
-                                        const playIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=' + pkg + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.autoplay=true;B.play=true;end;';
-                                        console.log('▶️ Clonado con autoplay:', pkg);
-                                        window.location.href = playIntent;
-                                    } catch (e) {
-                                        console.log('❌ Paquete falló:', pkg);
-                                    }
-                                }, index * 500);
-                            });
-                            
-                            // Fallback: abrir en navegador
-                            setTimeout(() => {
-                                const cloneUrl = url + (url.includes('?') ? '&' : '?') + 'autoplay=true&play=true';
-                                console.log('🌐 Abriendo clonado en navegador con autoplay');
-                                window.open(cloneUrl, '_blank');
-                            }, 2000);
-                            
-                        } catch (e) {
-                            console.log('❌ Error abriendo Spotify Clonado:', e);
-                        }
+                    // Abrir Spotify Original
+                    try {
+                        const spotifyUri = url.replace('https://open.spotify.com/', 'spotify:');
+                        window.location.href = spotifyUri;
+                        console.log('✅ Spotify Original abierto');
+                    } catch (e) {
+                        console.log('❌ Error abriendo Original:', e);
+                        window.open(url, '_blank');
+                    }
+                    
+                    // Esperar 6 segundos para que cargue
+                    console.log('⏳ Esperando 6 segundos para que cargue Spotify Original...');
+                    await sleep(6000);
+                    
+                    // Presionar PLAY en Spotify Original
+                    console.log('▶️ PASO 2: Presionando PLAY en Spotify Original...');
+                    try {
+                        // Método 1: URI con comando de play
+                        const playUri = spotifyUri + ':play';
+                        window.location.href = playUri;
                         
-                        setTimeout(resolve, 6000);
-                    }, delay);
+                        // Método 2: Simular tecla SPACE
+                        setTimeout(() => {
+                            const spaceEvent = new KeyboardEvent('keydown', {
+                                key: ' ',
+                                code: 'Space',
+                                keyCode: 32,
+                                bubbles: true
+                            });
+                            document.dispatchEvent(spaceEvent);
+                        }, 500);
+                        
+                        console.log('✅ PLAY presionado en Spotify Original');
+                    } catch (e) {
+                        console.log('❌ Error presionando PLAY en Original:', e);
+                    }
+                    
+                    // Si solo es original, terminar aquí
+                    if (appChoice === 'original') {
+                        console.log('✅ Flujo completado - Solo Original');
+                        resolve();
+                        return;
+                    }
                 }
                 
-                // Tiempos de resolución simplificados
-                if (appChoice === 'both') {
-                    setTimeout(resolve, 14000); // 7s + 6s + 1s buffer
-                } else {
-                    setTimeout(resolve, 6500);
+                // Solo continuar con clonado si es 'both' o 'cloned'
+                if (appChoice === 'both' || appChoice === 'cloned') {
+                    console.log('📱 PASO 3: Abriendo Spotify Clonado...');
+                    
+                    // Abrir Spotify Clonado
+                    try {
+                        const clonedPackages = [
+                            'com.spotify.music.clone',
+                            'com.appcloner.com.spotify.music'
+                        ];
+                        
+                        // Intentar con primer paquete
+                        const intent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=' + clonedPackages[0] + ';action=android.intent.action.VIEW;end;';
+                        window.location.href = intent;
+                        console.log('✅ Spotify Clonado abierto');
+                        
+                        // Fallback si no funciona
+                        setTimeout(() => {
+                            window.open(url + '?clone=true', '_blank');
+                        }, 1000);
+                        
+                    } catch (e) {
+                        console.log('❌ Error abriendo Clonado:', e);
+                        window.open(url + '?clone=true', '_blank');
+                    }
+                    
+                    // Esperar 6 segundos para que cargue
+                    console.log('⏳ Esperando 6 segundos para que cargue Spotify Clonado...');
+                    await sleep(6000);
+                    
+                    // Presionar PLAY en Spotify Clonado
+                    console.log('▶️ PASO 4: Presionando PLAY en Spotify Clonado...');
+                    try {
+                        // Método 1: Intent con autoplay para clonado
+                        const playIntent = 'intent://open.spotify.com' + url.split('open.spotify.com')[1] + '#Intent;scheme=https;package=com.spotify.music.clone;action=android.intent.action.VIEW;S.autoplay=true;end;';
+                        window.location.href = playIntent;
+                        
+                        // Método 2: Simular tecla SPACE
+                        setTimeout(() => {
+                            const spaceEvent = new KeyboardEvent('keydown', {
+                                key: ' ',
+                                code: 'Space',
+                                keyCode: 32,
+                                bubbles: true
+                            });
+                            document.dispatchEvent(spaceEvent);
+                        }, 500);
+                        
+                        console.log('✅ PLAY presionado en Spotify Clonado');
+                    } catch (e) {
+                        console.log('❌ Error presionando PLAY en Clonado:', e);
+                    }
                 }
+                
+                console.log('✅ Flujo secuencial completado - Ambas apps reproduciendo');
+                resolve();
             });
         }
 
@@ -694,20 +694,20 @@
                             lastPlayedLinks = lastPlayedLinks.slice(-50);
                         }
                         
-                        updateDashboard();
-                        
                         // Actualizar estado de PLAY en dashboard
                         document.getElementById('currentCycle').textContent = cycleCount;
-                        document.getElementById('playStatus').textContent = 'Intentando reproducir...';
+                        document.getElementById('playStatus').textContent = 'Iniciando flujo secuencial...';
                         
-                        // Usar la función async de apertura con espera
-                        console.log('🚀 Iniciando apertura y PLAY automático para:', linkObj.id);
+                        // Usar la función async de apertura SECUENCIAL
+                        console.log('🚀 Iniciando flujo secuencial para:', linkObj.id);
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - 📱 Abriendo apps secuencialmente...';
+                        
                         await simulateSpotifyOpen(link, appChoice);
                         
-                        // Actualizar estado después de la apertura
-                        document.getElementById('playStatus').textContent = 'Reproduciendo ▶️';
-                        statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ PLAY presionado, reproduciendo...';
-                        console.log('✅ PLAY automático ejecutado');
+                        // Actualizar estado después del flujo completo
+                        document.getElementById('playStatus').textContent = 'Ambas apps reproduciendo ▶️';
+                        statusText.textContent = 'Ciclo ' + cycleCount + ' - ✅ Flujo completado, reproduciendo...';
+                        console.log('✅ Flujo secuencial completado, ambas apps reproduciendo');
                         
                         // Duración con variación aleatoria más inteligente
                         let baseDuration = duration;
