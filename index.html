@@ -268,20 +268,20 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
         </button>
 
         <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 8px; font-size: 12px;">
-            <div style="color: #1db954; font-weight: bold;">🎵 SOLUCIÓN: TRACKS LIMPIOS (Sin Errores)</div>
+            <div style="color: #1db954; font-weight: bold;">🔧 SOLUCIÓN ROBUSTA (Anti-Error)</div>
             <div style="margin-top: 5px;">
-                1. ✅ Enlaces limpios sin parámetros ?si=<br>
-                2. ▶️ Sin errores "Something went wrong"<br>
-                3. ⏱️ Tiempo ajustado: 4s por app (8s total)<br>
-                4. 🎯 18 tracks reales incluidos por defecto<br>
-                5. 📊 Reproducción automática garantizada
+                1. 🌐 Método primario: Navegador web (más estable)<br>
+                2. 📱 Método secundario: URI Spotify<br>
+                3. 🔗 Método terciario: Intents Android<br>
+                4. ⏱️ 5 segundos por app (tiempo suficiente)<br>
+                5. 📊 Validación estricta de Track IDs
             </div>
             <div style="margin-top: 8px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
-                <div style="color: #ffa500; font-weight: bold;">🔧 Problema resuelto:</div>
+                <div style="color: #ffa500; font-weight: bold;">🎯 Estrategia actualizada:</div>
                 <div style="font-size: 11px; margin-top: 4px;">
-                • Parámetros ?si= removidos automáticamente<br>
-                • URLs limpias: spotify.com/track/ID<br>
-                • Sin conflictos de tracking
+                • Navegador primero (evita "Something went wrong")<br>
+                • URIs e Intents como refuerzo<br>
+                • Logs detallados para debug
                 </div>
             </div>
         </div>
@@ -402,16 +402,29 @@ https://open.spotify.com/track/0VjIjW4GlULA6wcjSHuLNO"></textarea>
             const validLinks = [];
             
             links.forEach(link => {
-                if (validateSpotifyUrl(link)) {
-                    const type = getContentType(link);
-                    validLinks.push({
-                        url: link,
-                        type: type,
-                        id: link.split('/').pop().split('?')[0]
-                    });
+                // Limpiar enlace completamente
+                const cleanLink = link.split('?')[0].split('#')[0].trim();
+                
+                if (validateSpotifyUrl(cleanLink)) {
+                    const type = getContentType(cleanLink);
+                    const trackId = cleanLink.split('/track/')[1];
+                    
+                    if (trackId && trackId.length > 0) {
+                        validLinks.push({
+                            url: cleanLink,
+                            type: type,
+                            id: trackId
+                        });
+                        console.log('✅ Track válido agregado:', trackId);
+                    } else {
+                        console.log('❌ Track ID inválido:', cleanLink);
+                    }
+                } else {
+                    console.log('❌ URL inválida:', link);
                 }
             });
             
+            console.log(`📊 Total tracks válidos: ${validLinks.length}`);
             return validLinks;
         }
 
